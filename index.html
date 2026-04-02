@@ -455,6 +455,9 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Lato',sans-serif;b
       <p class="final-sub">Ab Kabhi Mat Jana.. 🌸</p>
       <p class="final-hearts">💗 🌸 💗 🌸 💗</p>
     </div>
+    <div style="margin-top:20px;">
+     <button class="btn-next" onclick="startFromScratch()">Start Again 🔄</button>
+    </div>
   </div>
 </div>
 
@@ -497,7 +500,7 @@ document.addEventListener('mousemove',e=>{spark.style.opacity='1';spark.style.le
 /* ── Slides ── */
 const TOTAL=5;let cur=0;
 const dotsEl=document.getElementById('dots');
-for(let i=0;i<TOTAL;i++){const d=document.createElement('button');d.className='dot'+(i===0?' on':'');d.onclick=()=>goSlide(i);dotsEl.appendChild(d)}
+for(let i=0;i<TOTAL;i++){const d=document.createElement('button');d.className='dot'+(i===0?' on':'');d.style.pointerEvents = "none";dotsEl.appendChild(d)}
 function goSlide(n){
   if(n===cur)return;
   const prev=document.getElementById('slide-'+cur);
@@ -752,6 +755,73 @@ document.addEventListener('touchend',e=>{
     if(dx>0&&cur>0)goSlide(cur-1);
   }
 },{passive:true});
+
+
+
+function startFromScratch() {
+  /* 🎵 RESET MUSIC COMPLETELY */
+  audio.pause();
+  audio.src = '';
+  songs = [];
+  sidx = 0;
+  playing = false;
+
+  document.getElementById('playBtn').textContent = '▶';
+  document.getElementById('mTitle').innerHTML = 'No songs yet<span>Upload our special song below ✨</span>';
+  document.getElementById('musicCard').classList.remove('playing');
+  document.getElementById('mArt').classList.remove('playing');
+  document.getElementById('playlist').innerHTML =
+    '<p class="no-songs">No songs added yet<br><span style="font-size:.66rem">Click below to add 🎵</span></p>';
+  document.getElementById('pFill').style.width = '0%';
+  document.getElementById('cTime').textContent = '0:00';
+  document.getElementById('dTime').textContent = '0:00';
+  setEq(false);
+
+  /* 🖼️ RESET IMAGES */
+  for (let i = 0; i < 4; i++) {
+    photoUrls[i] = null;
+    const sl = document.getElementById('slot' + i);
+    sl.classList.add('empty');
+    sl.style.background = '';
+    sl.style.border = '';
+    sl.style.aspectRatio = '';
+    sl.style.display = '';
+    sl.innerHTML = '<span style="font-size:1.1rem;opacity:.5">📷</span><span>Add Memory</span>';
+    sl.onclick = () => pickPhoto(i);
+  }
+
+  /* 🎬 RESET COLLAGE */
+  resetCollage();
+
+  /* 💌 RESET ENVELOPES */
+  openedCount = 0;
+  for (let i = 0; i < 6; i++) {
+    const sc = document.getElementById('env' + i);
+    if (sc) sc.classList.remove('opened', 'visible');
+  }
+  document.getElementById('finaleWrap').classList.remove('show');
+
+  /* 🔄 RESET NO BUTTON */
+  moveCount = 0;
+  const noBtn = document.getElementById('noBtn');
+  noBtn.style.transform = 'translate(0,0)';
+  noBtn.textContent = 'Nahi, abhi gussa hoon';
+
+  /* 📜 RESET SLIDES */
+  document.querySelectorAll('.slide').forEach(s => {
+    s.classList.remove('active');
+  });
+  cur = 0;
+  document.getElementById('slide-0').classList.add('active');
+
+  /* 🔘 RESET DOTS */
+  document.querySelectorAll('.dot').forEach((d, i) => {
+    d.classList.toggle('on', i === 0);
+  });
+
+  /* 📱 SCROLL TOP */
+  window.scrollTo(0, 0);
+}
 </script>
 </body>
 </html>
