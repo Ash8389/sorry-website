@@ -704,7 +704,12 @@ function openEnv(i){
   if (openedCount === 6) {
     setTimeout(() => {
       document.getElementById('finaleWrap').classList.add('show');
-      document.getElementById('restartWrap').style.display = 'block'; // 👈 show button
+      document.getElementById('restartWrap').style.display = 'block';
+document.getElementById('restartWrap').style.opacity = '0';
+setTimeout(()=>{
+  document.getElementById('restartWrap').style.transition = 'opacity 0.6s ease';
+  document.getElementById('restartWrap').style.opacity = '1';
+},50); // 👈 show button
       fireworks();
     }, 500);
   }
