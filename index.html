@@ -191,10 +191,38 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Lato',sans-serif;b
   display:flex;
   align-items:center;
   justify-content:center;
-  background:linear-gradient(135deg,#e91e63,#c05ccf);
   cursor:pointer;
-  transition:all .4s ease;
   overflow:hidden;
+  position:relative;
+
+  background:rgba(20,10,40,.6);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+
+  border:1px solid rgba(255,107,138,.25);
+
+  box-shadow:
+    0 8px 30px rgba(0,0,0,.5),
+    inset 0 0 20px rgba(255,107,138,.15);
+
+  transition:all .4s ease;
+}
+
+.fp-inner::after{
+  content:'';
+  position:absolute;
+  inset:-1px;
+  border-radius:inherit;
+  background:linear-gradient(135deg,#ff6b8a,#c9b6f5,#f5c6a0,#ff6b8a);
+  background-size:300% 300%;
+  animation:fpGlow 6s linear infinite;
+  z-index:-1;
+  opacity:.6;
+}
+
+@keyframes fpGlow{
+  0%{background-position:0%}
+  100%{background-position:300%}
 }
 /* expanded player */
 .float-player.expanded .fp-inner{
@@ -202,13 +230,20 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Lato',sans-serif;b
   height:auto;
   border-radius:20px;
   padding:12px;
+
+  position:absolute;
+  right:0;
+
   flex-direction:column;
   align-items:stretch;
-  background:rgba(14,8,28,.95);
-  backdrop-filter:blur(20px);
-  max-width:calc(100vw - 40px);
-  position: absolute;
-  right: 0;   /* anchor to right */
+
+  transform-origin:bottom right;
+  animation:expandPlayer .35s cubic-bezier(.34,1.56,.64,1);
+}
+
+@keyframes expandPlayer{
+  0%{transform:scale(.6) translateY(20px);opacity:.5}
+  100%{transform:scale(1) translateY(0);opacity:1}
 }
 
 /* hide full UI when collapsed */
@@ -220,12 +255,28 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Lato',sans-serif;b
 
 /* show only play icon in disk */
 .float-player:not(.expanded) .fp-inner::before{
-  content:"🎵";
-  font-size:1.4rem;
+  content:'';
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  background:radial-gradient(circle at center,#fff 10%,#e91e63 12%,#c05ccf 40%,#111 100%);
+  animation:spin 3s linear infinite;
+}
+.fp-inner.playing{
+  animation:fpPulse 1.8s ease-in-out infinite;
 }
 
-.fp-inner.playing{
-  box-shadow:0 8px 40px rgba(0,0,0,.55), 0 0 30px rgba(255,107,138,.2), 0 0 0 1px rgba(255,107,138,.25);
+@keyframes fpPulse{
+  0%,100%{
+    box-shadow:
+      0 0 0 0 rgba(255,107,138,.5),
+      0 8px 30px rgba(0,0,0,.5);
+  }
+  50%{
+    box-shadow:
+      0 0 0 12px rgba(255,107,138,0),
+      0 12px 40px rgba(0,0,0,.7);
+  }
 }
 
 /* top row: art | song name + artist | controls */
@@ -293,9 +344,23 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Lato',sans-serif;b
 .fp-prog-row{display:flex;align-items:center;gap:6px}
 .fp-time{font-size:.58rem;color:var(--muted);flex-shrink:0;font-weight:300;min-width:26px}
 .fp-prog{flex:1;height:3px;background:rgba(255,255,255,.1);border-radius:2px;cursor:pointer;position:relative}
-.fp-fill{height:100%;width:0%;background:linear-gradient(to right,#e91e63,#ff6b8a,#c05ccf);border-radius:2px;transition:width .25s linear}
-.fp-prog:hover .fp-fill{filter:brightness(1.2)}
+.fp-fill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(to right,#e91e63,#ff6b8a,#c05ccf);
+  border-radius:2px;
+  box-shadow:0 0 10px rgba(255,107,138,.6);
+}.fp-prog:hover .fp-fill{filter:brightness(1.2)}
 
+.fp-btn:active,
+.fp-play:active{
+  transform:scale(.85);
+}
+
+@keyframes floatUp{
+  0%{transform:translateY(0);opacity:1}
+  100%{transform:translateY(-80px);opacity:0}
+}
 /* bottom row: vol + add song */
 .fp-bottom{
   display:flex;align-items:center;gap:8px;
@@ -770,8 +835,23 @@ fpAudio.addEventListener('ended', ()=>{ fpLoad((fpIdx+1), true); });
 let toastTimer;
 function showToast(msg){
   const t = document.getElementById('fpToast');
-  t.textContent = '🎵 ' + msg;
+  t.textContent = '💗 ' + msg;
   t.classList.add('show');
+
+  // floating heart
+  const heart = document.createElement('div');
+  heart.textContent = '💗';
+  heart.style.cssText = `
+    position:fixed;
+    bottom:90px;
+    right:40px;
+    font-size:1rem;
+    animation:floatUp 1.5s ease-out forwards;
+    z-index:999;
+  `;
+  document.body.appendChild(heart);
+  setTimeout(()=>heart.remove(),1500);
+
   clearTimeout(toastTimer);
   toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
 }
