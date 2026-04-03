@@ -499,6 +499,18 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Lato',sans-serif;b
 @keyframes captionFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 .collage-close{display:inline-block;margin-top:10px;font-size:.64rem;color:rgba(212,184,200,.4);background:none;border:1px solid rgba(255,107,138,.2);border-radius:30px;padding:6px 20px;cursor:pointer;letter-spacing:.1em;text-transform:uppercase;transition:color .2s,border-color .2s,background .2s}
 .collage-close:hover{color:var(--rose);border-color:var(--rose);background:rgba(255,107,138,.07)}
+#s3Next{
+  opacity:0;
+  transform:translateY(10px);
+  transition:all .4s ease;
+  pointer-events:none;
+}
+
+#s3Next.show{
+  opacity:1;
+  transform:translateY(0);
+  pointer-events:auto;
+}
 </style>
 </head>
 <body>
@@ -591,8 +603,8 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Lato',sans-serif;b
       <input type="file" id="photoInput" accept="image/*" onchange="loadPhoto(this)">
     </div>
 
-    <div class="s3-next">
-      <button class="btn-next" onclick="burstFromButton(this); goSlide(3)">Ek last baat... 💌</button>
+    <div class="s3-next" id="s3Next">
+        <button class="btn-next" onclick="goSlide(3)">Ek last baat... 💌</button>
     </div>
   </div>
 </div>
@@ -903,6 +915,7 @@ function loadPhoto(inp){
   if(photoUrls.every(u=>u!==null)) {
     setTimeout(buildCollage, 800);
 
+    document.getElementById('s3Next').classList.add('show');
     // 🎵 NOW start music + show player
     showPlayer();
     fpLoad(Math.floor(Math.random()*fpSongs.length), true); //Random songs
