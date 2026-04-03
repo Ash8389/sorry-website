@@ -389,6 +389,18 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Lato',sans-serif;b
 }
 .fp-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+
+@keyframes miniBurst{
+  0%{
+    transform:translate(0,0) scale(.5);
+    opacity:1;
+  }
+  100%{
+    transform:translate(var(--x),var(--y)) scale(1.2);
+    opacity:0;
+  }
+}
+
 /* eq bars — shared keyframe already defined above */
 .eq-wrap{display:none} /* hide old eq wrap — replaced by fp-eq */
 #songInput{display:none}
@@ -516,7 +528,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Lato',sans-serif;b
     <p class="sub-pink">Mujhe pata hai tum naraz ho... 😔</p>
     <p class="sub-white">Aur mujhe yeh bhi pata hai maine galti ki.<br>Please meri baat sun lo... 🙏</p>
     <div class="btn-row">
-      <button class="btn btn-ok" onclick="goSlide(1)">Theek hai, bolo... 🤍</button>
+      <button class="btn btn-ok" onclick="burstFromButton(this); goSlide(1)">Theek hai, bolo... 🤍</button>
       <button class="btn btn-no" id="noBtn" onmouseenter="moveNoBtn()" ontouchstart="moveNoBtn()">Nahi, abhi gussa hoon</button>
     </div>
     <p class="tip-text" id="tipText">Don't Click On "Nahi, abhi gussa hoon"</p>
@@ -529,7 +541,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Lato',sans-serif;b
     <img src="https://media.tenor.com/yXNxw5d5g-4AAAAC/ok-cat-okay-cat.gif" alt="Crying Cat">
     <h2>Please na... 🥺</h2>
     <p>Bas ek chance do mujhe...<br>Main sach mein sorry bolna chahta hoon 💕</p>
-    <button class="btn btn-ok" style="margin-top:18px;width:100%;font-size:.9rem" onclick="closeNoModal()">Okay Bolo ❤️</button>
+    <button class="btn btn-ok" style="margin-top:18px;width:100%;font-size:.9rem" onclick="burstFromButton(this); closeNoModal()">Okay Bolo ❤️</button>
   </div>
 </div>
 
@@ -550,7 +562,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Lato',sans-serif;b
     </div>
     <div class="letter-sign">You Matter alot... 💕</div>
     <div class="letter-btn-wrap">
-      <button class="btn-next" onclick="goSlide(2)">Aage bado &nbsp;→</button>
+      <button class="btn-next" onclick="burstFromButton(this); goSlide(2)">Aage bado &nbsp;→</button>
     </div>
   </div>
 </div>
@@ -580,7 +592,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Lato',sans-serif;b
     </div>
 
     <div class="s3-next">
-      <button class="btn-next" onclick="goSlide(3)">Ek last baat... 💌</button>
+      <button class="btn-next" onclick="burstFromButton(this); goSlide(3)">Ek last baat... 💌</button>
     </div>
   </div>
 </div>
@@ -636,7 +648,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Lato',sans-serif;b
     <h2 class="thanku-title">Thanku! 🥰</h2>
     <p class="s4-sub">Tum duniya me sabse achi ho 🌸</p>
     <p class="s4-love">I miss you so muchhhh ♥</p>
-    <button class="btn-next" onclick="goSlide(4);burst()">Tumhare liye kuch special... ✨</button>
+    <button class="btn-next" onclick="burstFromButton(this);goSlide(4);burst()">Tumhare liye kuch special... ✨</button>
   </div>
 </div>
 
@@ -659,7 +671,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Lato',sans-serif;b
       <p class="final-hearts">💗 🌸 💗 🌸 💗</p>
     </div>
     <div id="restartWrap" style="margin-top:18px;display:none;">
-      <button class="btn-next" onclick="startFromScratch()">Start Again 🔄</button>
+      <button class="btn-next" onclick="burstFromButton(this); startFromScratch()">Start Again 🔄</button>
     </div>
   </div>
 </div>
@@ -1061,7 +1073,36 @@ function burst(){
     cont.appendChild(b);setTimeout(()=>b.remove(),3000);
   }
 }
+function burstFromButton(btn){
+  const rect = btn.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
 
+  const colors = ['💗','✨','🌸','💕','💞'];
+
+  for(let i=0;i<20;i++){
+    const el = document.createElement('div');
+    el.textContent = colors[Math.floor(Math.random()*colors.length)];
+
+    const angle = Math.random() * Math.PI * 2;
+    const dist  = 40 + Math.random() * 80;
+
+    el.style.cssText = `
+      position:fixed;
+      left:${cx}px;
+      top:${cy}px;
+      font-size:${0.8 + Math.random()}rem;
+      pointer-events:none;
+      z-index:9999;
+      --x:${Math.cos(angle)*dist}px;
+      --y:${Math.sin(angle)*dist}px;
+      animation:miniBurst ${0.6 + Math.random()*0.4}s ease-out forwards;
+    `;
+
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),1000);
+  }
+}
 /* ── Swipe ── */
 let tx=0,ty=0;
 document.addEventListener('touchstart',e=>{tx=e.changedTouches[0].clientX;ty=e.changedTouches[0].clientY},{passive:true});
