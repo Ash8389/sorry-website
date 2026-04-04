@@ -2566,6 +2566,9 @@
       if (cur === 5) {
         if (fpPlaying) { fpAudio.pause(); setFpPlaying(false); }
         hidePlayer();
+        reelIdx = Math.floor(Math.random() * REEL_VIDEOS.length);
+        reelHistory = [];
+        buildShuffleQueue();
         loadReel(reelIdx, true);
       } else {
         // If we go back or anywhere else, pause video
@@ -2575,17 +2578,37 @@
 
 /* ── Reel Videos (swipeable) ── */
 const REEL_VIDEOS = [
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+  'https://res.cloudinary.com/dlvefzirc/video/upload/Video-101_jizoip.mp4',
+  'https://res.cloudinary.com/dlvefzirc/video/upload/Video-951_ohqvga.mp4',
+  'https://res.cloudinary.com/dlvefzirc/video/upload/Video-228_qzdjcl.mp4',
 ];
 let reelIdx = 0;
 let reelMuted = false;
 let reelTouchStartX = 0;
 let reelTouchStartY = 0;
+let reelQueue = [];
+let reelHistory = [];
 
-function loadReel(idx, autoPlay) {
-  reelIdx = ((idx % REEL_VIDEOS.length) + REEL_VIDEOS.length) % REEL_VIDEOS.length;
+function buildShuffleQueue() {
+  reelQueue = [...Array(REEL_VIDEOS.length).keys()]
+    .filter(i => i !== reelIdx)
+    .sort(() => Math.random() - 0.5);
+}
+
+function loadReel(idx, autoPlay, isBack) {
+  if (isBack) {
+    if (reelHistory.length === 0) return;
+    reelIdx = reelHistory.pop();
+  } else if (idx === 'next') {
+    reelHistory.push(reelIdx);
+    if (reelQueue.length === 0) buildShuffleQueue();
+    reelIdx = reelQueue.shift();
+  } else {
+    reelIdx = idx;
+    reelHistory = [];
+    buildShuffleQueue();
+  }
+
   const v = document.getElementById('reelVideo');
   const w = document.getElementById('reelWrap');
   if (!v) return;
@@ -2593,7 +2616,6 @@ function loadReel(idx, autoPlay) {
   v.muted = reelMuted;
   v.load();
   if (autoPlay) { v.play(); w.classList.remove('paused'); updatePlayPauseIcon(false); }
-  buildReelDots();
 }
 
 function toggleReelPlay(){
@@ -2645,8 +2667,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const dx = e.changedTouches[0].clientX - reelTouchStartX;
       const dy = e.changedTouches[0].clientY - reelTouchStartY;
       if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.2) {
-        if (dx < 0) loadReel(reelIdx + 1, true);
-        else loadReel(reelIdx - 1, true);
+        if (dx < 0) loadReel('next', true, false);
+        else loadReel(null, true, true);
       }
     }, { passive: true });
 
@@ -2658,8 +2680,8 @@ document.addEventListener('DOMContentLoaded', () => {
       mouseDown = false;
       const dx = e.clientX - mouseStartX;
       if (Math.abs(dx) > 50) {
-        if (dx < 0) loadReel(reelIdx + 1, true);
-        else loadReel(reelIdx - 1, true);
+        if (dx < 0) loadReel('next', true, false);
+        else loadReel(null, true, true);
       }
     });
     w.addEventListener('mouseleave', () => { mouseDown = false; });
@@ -2668,10 +2690,16 @@ document.addEventListener('DOMContentLoaded', () => {
     let tapStartX = 0;
     w.addEventListener('touchstart', e => { tapStartX = e.changedTouches[0].clientX; }, { passive: true });
     w.addEventListener('click', e => {
-      if (e.target.id === 'playPauseBtn') return; // handled by toggleReelPlay
-      const dx = Math.abs((e.clientX || tapStartX) - tapStartX);
-      if (dx < 10) toggleReelMute();
-    });
+  if (e.target.id === 'playPauseBtn') return;
+  const rect = w.getBoundingClientRect();
+  const clickX = e.clientX - rect.left;
+  const clickY = e.clientY - rect.top;
+  const centerX = rect.width / 2;
+  const centerY = rect.height / 2;
+  const inCenter = Math.abs(clickX - centerX) < rect.width * 0.35 
+                && Math.abs(clickY - centerY) < rect.height * 0.35;
+  if (inCenter) toggleReelMute();
+});
   }
 
   buildReelDots();
@@ -3099,12 +3127,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
       /* ⏸️ RESET VIDEO */
       reelIdx = 0;
-reelMuted = false;
-const v = document.getElementById('reelVideo');
-const w = document.getElementById('reelWrap');
-if (v) { v.pause(); v.currentTime = 0; v.muted = false; w.classList.add('paused'); }
-document.getElementById('reelProgressFill').style.width = '0%';
-buildReelDots();
+      reelHistory = [];
+      reelQueue = [];
+      reelMuted = false;
+      const v = document.getElementById('reelVideo');
+      const w = document.getElementById('reelWrap');
+      if (v) { v.pause(); v.currentTime = 0; v.muted = false; w.classList.add('paused'); }
+      document.getElementById('reelProgressFill').style.width = '0%';
+      buildReelDots();
 
       /* 🔄 RESET NO BUTTON */
       moveCount = 0;
