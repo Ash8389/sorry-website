@@ -2152,7 +2152,65 @@
       transform: translateY(0);
       pointer-events: auto;
     }
+
+
+    /* Reel swipe arrows */
+.reel-swipe-left, .reel-swipe-right {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255,255,255,0.5);
+  font-size: 2.5rem;
+  z-index: 5;
+  pointer-events: none;
+  line-height: 1;
+  transition: opacity 0.3s;
+}
+.reel-swipe-left { left: 10px; }
+.reel-swipe-right { right: 10px; }
+
+
+/* Mute toast */
+.reel-mute-toast {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  background: rgba(0,0,0,0.65);
+  color: #fff;
+  font-size: 0.82rem;
+  padding: 8px 16px;
+  border-radius: 30px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+  z-index: 10;
+  white-space: nowrap;
+}
+.reel-mute-toast.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* Instagram-style thin progress bar */
+.reel-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255,255,255,0.25);
+  z-index: 6;
+}
+.reel-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: #fff;
+  border-radius: 0 1px 1px 0;
+  transition: width 0.1s linear;
+}
   </style>
+
 </head>
 
 <body>
@@ -2420,22 +2478,36 @@
   </div>
 
   <!-- S6 -->
-  <div class="slide" id="slide-5">
-    <div class="s6">
-      <h2 class="thanku-title" style="font-size: clamp(1.8rem,6vw,2.4rem); margin-bottom: 20px;">Special Memory ✨</h2>
-      <div class="reel-wrap paused" id="reelWrap">
-        <!-- REPLACE THE src HERE WITH YOUR LOCAL VIDEO E.G. "my_video.mp4" -->
-        <video id="reelVideo" loop playsinline
-          src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
-          onclick="toggleReel()"></video>
-        <div class="play-pause-btn">▶</div>
-        <div class="reel-overlay">
-          <button class="btn-next" style="width:100%; box-shadow:0 4px 15px rgba(233,30,99,.5);"
-            onclick="burstFromButton(this); startFromScratch()">Start Again 🔄</button>
-        </div>
+<div class="slide" id="slide-5">
+  <div class="s6">
+    <h2 class="thanku-title" style="font-size: clamp(1.8rem,6vw,2.4rem); margin-bottom: 20px;">Special Memory ✨</h2>
+
+    <div class="reel-wrap paused" id="reelWrap">
+      <video id="reelVideo" loop playsinline
+        src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"></video>
+
+      <!-- Swipe hint arrows -->
+      <div class="reel-swipe-left" id="reelSwipeLeft">&#8249;</div>
+      <div class="reel-swipe-right" id="reelSwipeRight">&#8250;</div>
+
+      <!-- Play/Pause tap zone (center) -->
+      <div class="play-pause-btn" id="playPauseBtn" onclick="toggleReelPlay()">&#9654;</div>
+
+      <!-- Mute indicator -->
+      <div class="reel-mute-toast" id="reelMuteToast">🔇 Muted</div>
+
+      <!-- Progress bar -->
+      <div class="reel-progress-bar">
+        <div class="reel-progress-fill" id="reelProgressFill"></div>
       </div>
     </div>
+
+    <div style="margin-top:18px;">
+      <button class="btn-next" style="width:100%; box-shadow:0 4px 15px rgba(233,30,99,.5);"
+        onclick="burstFromButton(this); startFromScratch()">Start Again 🔄</button>
+    </div>
   </div>
+</div>
 
   <audio id="audioEl"></audio>
 
@@ -2494,22 +2566,116 @@
       if (cur === 5) {
         if (fpPlaying) { fpAudio.pause(); setFpPlaying(false); }
         hidePlayer();
-        if (v) { v.play(); w.classList.remove('paused'); }
+        loadReel(reelIdx, true);
       } else {
         // If we go back or anywhere else, pause video
         if (v && !v.paused) { v.pause(); w.classList.add('paused'); }
       }
     }
 
-    function toggleReel() {
-      const v = document.getElementById('reelVideo');
-      const w = document.getElementById('reelWrap');
-      if (v.paused) {
-        v.play(); w.classList.remove('paused');
-      } else {
-        v.pause(); w.classList.add('paused');
+/* ── Reel Videos (swipeable) ── */
+const REEL_VIDEOS = [
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+];
+let reelIdx = 0;
+let reelMuted = false;
+let reelTouchStartX = 0;
+let reelTouchStartY = 0;
+
+function loadReel(idx, autoPlay) {
+  reelIdx = ((idx % REEL_VIDEOS.length) + REEL_VIDEOS.length) % REEL_VIDEOS.length;
+  const v = document.getElementById('reelVideo');
+  const w = document.getElementById('reelWrap');
+  if (!v) return;
+  v.src = REEL_VIDEOS[reelIdx];
+  v.muted = reelMuted;
+  v.load();
+  if (autoPlay) { v.play(); w.classList.remove('paused'); updatePlayPauseIcon(false); }
+  buildReelDots();
+}
+
+function toggleReelPlay() {
+  const v = document.getElementById('reelVideo');
+  const w = document.getElementById('reelWrap');
+  if (!v) return;
+  if (v.paused) { v.play(); w.classList.remove('paused'); updatePlayPauseIcon(false); }
+  else { v.pause(); w.classList.add('paused'); updatePlayPauseIcon(true); }
+}
+
+function toggleReelMute() {
+  const v = document.getElementById('reelVideo');
+  if (!v) return;
+  reelMuted = !reelMuted;
+  v.muted = reelMuted;
+  const toast = document.getElementById('reelMuteToast');
+  toast.textContent = reelMuted ? '🔇 Muted' : '🔊 Sound on';
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 1200);
+}
+
+function updatePlayPauseIcon(paused) {
+  const btn = document.getElementById('playPauseBtn');
+  if (btn) btn.innerHTML = paused ? '&#9654;' : '&#9646;&#9646;';
+}
+
+/* Progress bar update */
+document.addEventListener('DOMContentLoaded', () => {
+  const v = document.getElementById('reelVideo');
+  if (v) {
+    v.addEventListener('timeupdate', () => {
+      if (!v.duration) return;
+      document.getElementById('reelProgressFill').style.width = (v.currentTime / v.duration * 100) + '%';
+    });
+    v.addEventListener('ended', () => {
+      document.getElementById('reelProgressFill').style.width = '0%';
+    });
+  }
+
+  /* Swipe detection on reel wrap */
+  const w = document.getElementById('reelWrap');
+  if (w) {
+    w.addEventListener('touchstart', e => {
+      reelTouchStartX = e.changedTouches[0].clientX;
+      reelTouchStartY = e.changedTouches[0].clientY;
+    }, { passive: true });
+
+    w.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - reelTouchStartX;
+      const dy = e.changedTouches[0].clientY - reelTouchStartY;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+        if (dx < 0) loadReel(reelIdx + 1, true);
+        else loadReel(reelIdx - 1, true);
       }
-    }
+    }, { passive: true });
+
+    /* Desktop drag swipe */
+    let mouseDown = false, mouseStartX = 0;
+    w.addEventListener('mousedown', e => { mouseDown = true; mouseStartX = e.clientX; });
+    w.addEventListener('mouseup', e => {
+      if (!mouseDown) return;
+      mouseDown = false;
+      const dx = e.clientX - mouseStartX;
+      if (Math.abs(dx) > 50) {
+        if (dx < 0) loadReel(reelIdx + 1, true);
+        else loadReel(reelIdx - 1, true);
+      }
+    });
+    w.addEventListener('mouseleave', () => { mouseDown = false; });
+
+    /* Tap to mute/unmute (but not if it was a swipe) */
+    let tapStartX = 0;
+    w.addEventListener('touchstart', e => { tapStartX = e.changedTouches[0].clientX; }, { passive: true });
+    w.addEventListener('click', e => {
+      if (e.target.id === 'playPauseBtn') return; // handled by toggleReelPlay
+      const dx = Math.abs((e.clientX || tapStartX) - tapStartX);
+      if (dx < 10) toggleReelMute();
+    });
+  }
+
+  buildReelDots();
+});
 
     /* ── No button ── */
     const noBtn = document.getElementById('noBtn'); let moveCount = 0;
@@ -2932,9 +3098,13 @@
       document.getElementById('nextSlideWrap').style.display = 'none';
 
       /* ⏸️ RESET VIDEO */
-      const v = document.getElementById('reelVideo');
-      const w = document.getElementById('reelWrap');
-      if (v) { v.pause(); v.currentTime = 0; w.classList.add('paused'); }
+      reelIdx = 0;
+reelMuted = false;
+const v = document.getElementById('reelVideo');
+const w = document.getElementById('reelWrap');
+if (v) { v.pause(); v.currentTime = 0; v.muted = false; w.classList.add('paused'); }
+document.getElementById('reelProgressFill').style.width = '0%';
+buildReelDots();
 
       /* 🔄 RESET NO BUTTON */
       moveCount = 0;
