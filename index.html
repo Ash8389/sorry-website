@@ -1406,18 +1406,23 @@
 
     /* SLIDE 6 */
     .s6 {
-      max-width: 400px;
+      max-width: 420px;
       width: 100%;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 20px 0
+      padding: 10px 0 20px;
+    } 
+
+    .s6 .thanku-title {
+      font-size: clamp(1.4rem, 5vw, 2rem);
+      margin-bottom: 12px;
     }
 
     .reel-wrap {
       position: relative;
-      width: clamp(240px, 75vw, 320px);
+      width: clamp(280px, 88vw, 380px);
       aspect-ratio: 9/16;
       border-radius: 24px;
       overflow: hidden;
@@ -1425,7 +1430,7 @@
       background: #111;
       margin: 0 auto;
       border: 1px solid rgba(255, 107, 138, 0.2);
-    }
+    } 
 
     .reel-wrap video {
       width: 100%;
