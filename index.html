@@ -2864,32 +2864,44 @@ document.addEventListener('DOMContentLoaded', () => {
     function pickPhoto(i) { picSlot = i; document.getElementById('photoInput').click(); }
 
     function loadPhoto(inp) {
-      const f = inp.files[0]; if (!f) return;
-      const url = URL.createObjectURL(f);
-      photoUrls[picSlot] = url;
-      const slot = document.getElementById('slot' + picSlot);
-      const tilt = tilts[picSlot];
-      slot.classList.remove('empty');
-      slot.style.background = 'none'; slot.style.border = 'none';
-      slot.style.aspectRatio = 'auto'; slot.style.display = 'block';
-      slot.onclick = null;
-      slot.innerHTML = `<div class="polaroid" id="pol${picSlot}" style="--tilt:${tilt}deg" onanimationend="landPolaroid(${picSlot})"><img src="${url}" alt="memory"><div class="polaroid-caption">${captions[picSlot]}</div><button class="del-btn" onclick="delPhoto(event,${picSlot})">✕</button></div>`;
-      inp.value = '';
+        const f = inp.files[0]; if (!f) return;
+        
+        const img = new Image();
+        const url = URL.createObjectURL(f);
+        
+        img.onload = function() {
+          photoUrls[picSlot] = url;
+          const slot = document.getElementById('slot' + picSlot);
+          const tilt = tilts[picSlot];
+          slot.classList.remove('empty');
+          slot.style.background = 'none'; slot.style.border = 'none';
+          slot.style.aspectRatio = 'auto'; slot.style.display = 'block';
+          slot.onclick = null;
+          slot.innerHTML = `<div class="polaroid" id="pol${picSlot}" style="--tilt:${tilt}deg" onanimationend="landPolaroid(${picSlot})"><img src="${url}" alt="memory"><div class="polaroid-caption">${captions[picSlot]}</div><button class="del-btn" onclick="delPhoto(event,${picSlot})">✕</button></div>`;
 
-      /* update pip */
-      document.getElementById('ppip' + picSlot).classList.add('on');
+          document.getElementById('ppip' + picSlot).classList.add('on');
 
-      /* trigger collage when all 4 filled */
-      if (photoUrls.every(u => u !== null)) {
-        setTimeout(buildCollage, 800);
+          if (photoUrls.every(u => u !== null)) {
+            setTimeout(buildCollage, 800);
+            document.getElementById('s3Next').classList.add('show');
+            showPlayer();
+            fpLoad(Math.floor(Math.random() * fpSongs.length), true);
+            showToast("Special song for you 💕");
+          }
+        };
 
-        document.getElementById('s3Next').classList.add('show');
-        // 🎵 NOW start music + show player
-        showPlayer();
-        fpLoad(Math.floor(Math.random() * fpSongs.length), true); //Random songs
-        showToast("Special song for you 💕");
+        img.onerror = function() {
+          URL.revokeObjectURL(url);
+          const slot = document.getElementById('slot' + picSlot);
+          slot.classList.add('empty');
+          slot.style.background = ''; slot.style.border = ''; slot.style.aspectRatio = ''; slot.style.display = '';
+          slot.innerHTML = '<span style="font-size:1.1rem;opacity:.5">📷</span><span style="font-size:.62rem;color:#ff6b8a">Failed, try again</span>';
+          slot.onclick = () => pickPhoto(picSlot);
+        };
+
+        img.src = url;
+        inp.value = '';
       }
-    }
 
     function landPolaroid(i) { const pol = document.getElementById('pol' + i); if (pol) pol.classList.add('landed'); }
 
